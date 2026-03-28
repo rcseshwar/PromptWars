@@ -7,7 +7,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/aura-link']
 
-  # 3. Deploy to Cloud Run
+  # 3. Deploy to Cloud Run (Managed)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -17,10 +17,12 @@ steps:
       - '--image'
       - 'gcr.io/$PROJECT_ID/aura-link'
       - '--region'
-      - 'us-central1' # Replace with your preferred region
-      - '--platform'
-      - 'managed'
+      - 'us-central1'
       - '--allow-unauthenticated'
+      - '--memory'
+      - '512Mi'
+      - '--cpu'
+      - '1'
 
 images:
   - 'gcr.io/$PROJECT_ID/aura-link'
