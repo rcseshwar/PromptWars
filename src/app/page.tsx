@@ -1,87 +1,44 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import AuraHeader from "@/components/AuraHeader";
 import InputPanel from "@/components/InputPanel";
 import ActionMonitor from "@/components/ActionMonitor";
 import SystemDiagram from "@/components/SystemDiagram";
 import { Info, ShieldCheck, Globe, Zap, AlertTriangle, ShieldCheck as Shield } from "lucide-react";
 import { motion } from "framer-motion";
+import { processSignal } from "@/app/actions/processSignal";
 
 export default function AuraLinkApp() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [activeData, setActiveData] = useState<any | null>(null);
 
-  const processSignal = async (input: { type: string; content: string; file?: File }) => {
+  const processSignalAction = async (input: { type: string; content: string; file?: File }) => {
     setIsProcessing(true);
     
-    // Simulate Gemini Processing
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    
-    let mockResult: any;
-
-    // Logic based on input content (simple keyword matching for demo)
-    const content = input.content.toLowerCase();
-    
-    if (content.includes("crash") || content.includes("car") || content.includes("trapped")) {
-      mockResult = {
-        id: Date.now(),
-        intent: "EMERGENCY_ACCIDENT_RESPONSE",
-        urgency: "CRITICAL",
-        payload: {
-          location: "High Street, 51.5074° N, 0.1278° W",
-          incident_type: "Vehicle Collision",
-          trapped_count: 1,
-          hazards: ["Smoke detected", "Potential fuel leak"],
-          confidence: 0.94
-        },
-        actions: [
-          "Dispatched Fire & Rescue (Unit 4)",
-          "Alerted St. Jude's Trauma Centre",
-          "Automated Traffic Diversion (Radius: 500m)",
-          "Established VoIp Tunnel for Local Bystanders"
-        ]
-      };
-    } else if (content.includes("symptom") || content.includes("pain") || content.includes("chest")) {
-      mockResult = {
-        id: Date.now(),
-        intent: "HEALTHCARE_TRIAGE",
-        urgency: "HIGH",
-        payload: {
-          patient_status: "Acute Distress",
-          symptoms: ["Severe chest pain", "Shortness of breath"],
-          risk_assessment: "Potential Myocardial Infarction",
-          confidence: 0.89,
-          notes: "Patient is in high-stress environment"
-        },
-        actions: [
-          "Pre-alerting Cardiology Unit",
-          "Generated Priority Triage Ticket (#A402)",
-          "Sent Stabilisation Protocols to patient device",
-          "Mapping nearest AED locations"
-        ]
-      };
-    } else {
-      mockResult = {
-        id: Date.now(),
-        intent: "GENERAL_ASSISTANCE",
-        urgency: "NORMAL",
-        payload: {
-          subject: "Infrastructure Query",
-          verified: "True",
-          confidence: 0.98
-        },
-        actions: [
-          "Logged to Civic Works Dashboard",
-          "Shared knowledge base link with user"
-        ]
-      };
+    const formData = new FormData();
+    formData.set("text", input.content);
+    if (input.file) {
+      formData.set("image", input.file);
     }
 
-    setHistory(prev => [mockResult, ...prev]);
-    setActiveData(mockResult);
-    setIsProcessing(false);
+    try {
+      const result = await processSignal(formData);
+      
+      if (result.error) {
+        alert(result.error);
+      } else {
+        const payloadWithId = { ...result, id: Date.now() };
+        setHistory(prev => [payloadWithId, ...prev]);
+        setActiveData(payloadWithId);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Critical engine failure. Re-initializing communication link.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -122,7 +79,7 @@ export default function AuraLinkApp() {
             </div>
           </motion.div>
 
-          <InputPanel onProcess={processSignal} isProcessing={isProcessing} />
+          <InputPanel onProcess={processSignalAction} isProcessing={isProcessing} />
           
           <ActionMonitor data={activeData} history={history} />
         </div>

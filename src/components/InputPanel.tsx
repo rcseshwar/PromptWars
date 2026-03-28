@@ -27,20 +27,32 @@ const InputPanel: React.FC<InputPanelProps> = ({ onProcess, isProcessing }) => {
   };
 
   const toggleMic = () => {
-    if (!("webkitSpeechRecognition" in window)) {
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    if (!SpeechRecognition) {
       alert("Speech recognition not supported in this browser.");
       return;
     }
-    
-    // Quick mock for demo, actual implementation would use Web Speech API
-    setIsListening(!isListening);
-    if (!isListening) {
-      // Mocking auto-detection after 3s
-      setTimeout(() => {
-        setIsListening(false);
-        setText("Crash on high street, someone's trapped in a blue car! Smoke everywhere.");
-      }, 3000);
+
+    if (isListening) {
+      setIsListening(false);
+      return;
     }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setText(prev => (prev ? prev + " " + transcript : transcript));
+      setIsListening(false);
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+
+    recognition.start();
   };
 
   return (
